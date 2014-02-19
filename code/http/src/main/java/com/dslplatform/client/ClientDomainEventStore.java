@@ -2,7 +2,10 @@ package com.dslplatform.client;
 
 import java.util.concurrent.Future;
 
-import com.dslplatform.patterns.*;
+import com.dslplatform.patterns.AggregateDomainEvent;
+import com.dslplatform.patterns.AggregateRoot;
+import com.dslplatform.patterns.DomainEvent;
+import com.dslplatform.patterns.DomainEventStore;
 
 class ClientDomainEventStore implements DomainEventStore {
     protected final DomainProxy domainProxy;
@@ -12,7 +15,7 @@ class ClientDomainEventStore implements DomainEventStore {
     }
 
     @Override
-    public <TEvent extends DomainEvent> Future<String> submit(final TEvent event){
+    public <TEvent extends DomainEvent> Future<String> submit(final TEvent event) {
         return domainProxy.submit(event);
     }
 

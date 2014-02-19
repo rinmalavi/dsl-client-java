@@ -23,13 +23,14 @@ public class ProjectSettings {
      */
     public ProjectSettings(final Logger logger, final InputStream iniStream)
             throws IOException {
-        properties = new Properties();
         this.logger = logger;
+        properties = new Properties();
         properties.load(iniStream);
         if (logger.isDebugEnabled()) {
             for (final Map.Entry<Object, Object> prop : properties.entrySet()) {
                 if (logger.isTraceEnabled()) {
-                    logger.trace("Setting [" + prop.getKey() + "] = " + prop.getValue());
+                    logger.trace("Setting [" + prop.getKey() + "] = "
+                            + prop.getValue());
                 } else {
                     logger.debug("Setting [" + prop.getKey() + "]");
                 }
