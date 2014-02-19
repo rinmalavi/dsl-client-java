@@ -8,3 +8,6 @@ client/.history
 test/Ngs-Java-Test/.cache
 *.orig
 *~
+.idea/
+.idea_modules/
+

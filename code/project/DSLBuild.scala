@@ -101,6 +101,20 @@ object NGSBuild extends Build with Default with Dependencies {
     )
   ) dependsOn(core)
 
+  lazy val test = Project(
+    "test"
+    , file("test")
+    , settings = defaultSettings ++ Seq(
+      name := "DSL-Java-Test",
+      organization := "com.dslplatform",
+      initialCommands := "import com.dslplatform.test._",
+      libraryDependencies ++= Seq(jUnit, slf4j,
+        "ch.qos.logback" % "logback-classic" % "1.0.13")
+      , unmanagedSourceDirectories in Compile += sourceDirectory.value / "generated" / "java"
+      , unmanagedResourceDirectories in Compile += sourceDirectory.value / "generated" / "resources"
+    )
+  ) dependsOn (httpApache)
+
   lazy val httpApache = Project(
     "http-apache"
   , file("http-apache")
@@ -131,26 +145,6 @@ object NGSBuild extends Build with Default with Dependencies {
   , settings = defaultSettings ++ Seq(
       name := "DSL-Client-HTTP-Android"
     , libraryDependencies += androidSDK % "provided"
-    )
-  ) dependsOn(http)
-
-  import AssemblyKeys._
-
-  lazy val root = Project(
-    "root"
-  , file(".")
-  , settings = defaultSettings ++ Seq(
-      name := "DSL-Client"
-    , mainClass in assembly := Some("com.dslplatform.client.Bootstrap")
-    , jarName in assembly := "dsl-client-%s.jar" format version.value
-    , excludedJars in assembly := (fullClasspath in assembly).value.filter(_.data.getName endsWith ".jar")
-    , EclipseKeys.skipProject := true
-/*
-    , assembleArtifact in packageScala := false
-    , artifact in (Compile, assembly) ~= (_.copy(`classifier` = Some("assembly")))
-    , test in assembly := {}
-    ) ++ addArtifact(artifact in (Compile, assembly), assembly)
-*/
     )
   ) dependsOn(http)
 }
