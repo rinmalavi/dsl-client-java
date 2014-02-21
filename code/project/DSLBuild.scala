@@ -2,12 +2,15 @@ import sbt._
 import Keys._
 
 // Eclipse plugin
+
 import com.typesafe.sbteclipse.plugin.EclipsePlugin._
 
 // Dependency graph plugin
+
 import net.virtualvoid.sbt.graph.Plugin._
 
 // Assembly plugin
+
 import sbtassembly.Plugin._
 
 // ----------------------------------------------------------------------------
@@ -15,30 +18,30 @@ import sbtassembly.Plugin._
 trait Default {
   val defaultSettings =
     Defaults.defaultSettings ++
-    eclipseSettings ++
-    assemblySettings ++
-    graphSettings ++ Seq(
+      eclipseSettings ++
+      assemblySettings ++
+      graphSettings ++ Seq(
       version := "0.4.14-SNAPSHOT"
-    , organization := "com.dslplatform"
+      , organization := "com.dslplatform"
 
-    , crossPaths := false
-    , autoScalaLibrary := false
-    , scalaVersion := "2.10.3"
+      , crossPaths := false
+      , autoScalaLibrary := false
+      , scalaVersion := "2.10.3"
 
-    , javaHome := sys.env.get("JDK16_HOME").map(file(_))
-    , javacOptions := Seq(
+      , javaHome := sys.env.get("JDK16_HOME").map(file(_))
+      , javacOptions := Seq(
         "-deprecation"
-      , "-encoding", "UTF-8"
-      , "-Xlint:unchecked"
-      , "-source", "1.6"
-      , "-target", "1.6"
+        , "-encoding", "UTF-8"
+        , "-Xlint:unchecked"
+        , "-source", "1.6"
+        , "-target", "1.6"
       )
-    , javacOptions in doc := Seq(
+      , javacOptions in doc := Seq(
         "-source", "1.6"
       )
-    , unmanagedSourceDirectories in Compile := Seq((javaSource in Compile).value)
-    , unmanagedSourceDirectories in Test := Nil
-    , EclipseKeys.projectFlavor := EclipseProjectFlavor.Java
+      , unmanagedSourceDirectories in Compile := Seq((javaSource in Compile).value)
+      , unmanagedSourceDirectories in Test := Nil
+      , EclipseKeys.projectFlavor := EclipseProjectFlavor.Java
     )
 }
 
@@ -79,27 +82,27 @@ trait Dependencies {
 object NGSBuild extends Build with Default with Dependencies {
   lazy val core = Project(
     "core"
-  , file("core")
-  , settings = defaultSettings ++ Seq(
+    , file("core")
+    , settings = defaultSettings ++ Seq(
       name := "DSL-Client-Core"
-    , libraryDependencies += jodaTime
+      , libraryDependencies += jodaTime
     )
   )
 
   lazy val http = Project(
     "http"
-  , file("http")
-  , settings = defaultSettings ++ Seq(
+    , file("http")
+    , settings = defaultSettings ++ Seq(
       name := "DSL-Client-HTTP"
-    , libraryDependencies ++= Seq(
+      , libraryDependencies ++= Seq(
         slf4j
-      , jodaTime
-      , jackson
-      , commonsIo
-      , commonsCodec
+        , jodaTime
+        , jackson
+        , commonsIo
+        , commonsCodec
       )
     )
-  ) dependsOn(core)
+  ) dependsOn (core)
 
   lazy val test = Project(
     "test"
@@ -117,34 +120,41 @@ object NGSBuild extends Build with Default with Dependencies {
 
   lazy val httpApache = Project(
     "http-apache"
-  , file("http-apache")
-  , settings = defaultSettings ++ Seq(
+    , file("http-apache")
+    , settings = defaultSettings ++ Seq(
       name := "DSL-Client-HTTP-Apache"
-    , libraryDependencies ++= Seq(
+      , libraryDependencies ++= Seq(
         httpClient
-      , aws % "provided"
-      , jUnit % "test"
+        , aws % "provided"
+        , jUnit % "test"
       )
-    , unmanagedSourceDirectories in Test += (javaSource in Test).value
-    , EclipseKeys.createSrc := EclipseCreateSrc.Default + EclipseCreateSrc.Resource
+      , unmanagedSourceDirectories in Test += (javaSource in Test).value
+      , EclipseKeys.createSrc := EclipseCreateSrc.Default + EclipseCreateSrc.Resource
     )
-  ) dependsOn(http)
+  ) dependsOn (http)
 
   lazy val akka = Project(
     "akka"
-  , file("akka")
-  , settings = defaultSettings ++ Seq(
+    , file("akka")
+    , settings = defaultSettings ++ Seq(
       name := "DSL-Client-Akka"
-    , libraryDependencies += akkaActor % "provided"
+      , libraryDependencies += akkaActor % "provided"
+
     )
-  ) dependsOn(httpApache)
+  ) dependsOn (httpApache)
 
   lazy val httpAndroid = Project(
     "http-android"
-  , file("http-android")
-  , settings = defaultSettings ++ Seq(
+    , file("http-android")
+    , settings = defaultSettings ++ Seq(
       name := "DSL-Client-HTTP-Android"
-    , libraryDependencies += androidSDK % "provided"
-    )
-  ) dependsOn(http)
+      , libraryDependencies += androidSDK % "provided"
+      , assembleArtifact in packageScala := false
+      , artifact in(Compile, assembly) ~= (_.copy(`classifier` = Some("assembly")))
+      , mainClass in assembly := Some("com.dslplatform.client.Bootstrap")
+      , jarName in assembly := "dsl-client-android-%s.jar" format version.value
+      , outputPath in assembly := baseDirectory.value / "bin" / ("dsl-client-android-%s.jar" format version.value)
+      , excludedJars in assembly := (fullClasspath in assembly).value.filter(_.data.getName endsWith ".jar")
+    ) ++ addArtifact(artifact in(Compile, assembly), assembly)
+  ) dependsOn (http)
 }

@@ -3,12 +3,12 @@ module linqAndSql {
   //enum E { a; b; c; }
 
   root A1 {
-    //E e;
+    /*E e;*/
     String s;
     Int    i;
     Float  f;
     Array<Int> intArr;
-    list<Int> intList;
+    List<Int> intList;
     Set<Int> intSet;
   }
 
@@ -93,56 +93,23 @@ module linqAndSql {
     List<Int>  intList;
     Set<Int>   intSet;
   }
+
 /*
- linq RafoLiql 'IQueryableRepository<RafoGrid> grid => from s in grid select new { s, s.URI, s.SS }'
+  linq BSnowLiql 'IQueryableRepository<BSnow> bss => from bs in bss select new { bs, bs.URI, bs.s , bs.i, bs.intArr, bs.intList, bs.intSet }'
   {
-    RafoGrid s;
+    BSnow bs;
     String URI;
-    String SS;
+    String s;
+    Array<Int> intArr;
+    List<Int> intList;
+    Set<Int> intSet;
 
     specification findByUriLinq 'r => r.URI == uri'
     {
       string uri;
     }
-  }
-
-  cube RafoCube from RafoGrid
-  {
-    dimension SS;
-    dimension e;
-    count SS count;
-
-    specification startsWith 'it => it.SS.StartsWith(arg)'
-    {
-      string arg;
-    }
-
-    templater cubePdf 'Cube.docx' pdf;
-  }
-
-  value A 
-  {
-    String aV;
-
-    //calculated int SCnt from 'it => aV.Length';
-    calculated isSS from 'it => it.aV == "SS"';
-  }
-
-  value B 
-  {
-    String? bOV;
-    specification isBBB 'it => it.bOV == b'
-    {
-      String b;
-    }
-  }
-
-  value C 
-  {
-    String[] cAV;
-  }  */
+  }*/
 }
-
 /*module simple
 {
   mixin M;
