@@ -19,3 +19,9 @@ publishMavenStyle in ThisBuild    := true
 pomIncludeRepository in ThisBuild := { _ => false }
 
 homepage in ThisBuild             := Some(url("https://dsl-platform.com/"))
+
+
+libraryDependencies               += "com.novocode" % "junit-interface" % "0.11" % "test"
+
+
+testOptions += Tests.Argument(TestFrameworks.JUnit, "-q", "-v")

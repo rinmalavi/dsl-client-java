@@ -20,25 +20,21 @@ trait Default {
     , EclipseKeys.projectFlavor := EclipseProjectFlavor.Java
     , javacOptions in doc := Seq(
         "-encoding", "UTF-8"
+      )
+    , javacOptions := Seq(
+        "-deprecation"
+      , "-Xlint"
       , "-source", "1.6"
-      ) ++ (sys.props("java.specification.version") match {
-        case x if x >= "1.8" => Seq("-Xdoclint:none")
-        case _ => Nil
-      })
-    , javacOptions in (Compile, compile) := (javacOptions in doc).value ++ Seq(
-        "-target", "1.6"
-      , "-deprecation"
-      , "-Xlint:all"
-      ) ++ (sys.env.get("JDK16_HOME") match { 
-        case Some(jdk16Home) => Seq(
-            "-bootclasspath"
-          , Seq("rt", "jsse")
-              map(jdk16Home + "/jre/lib/" + _ + ".jar")
-              mkString(java.io.File.pathSeparator)
-          )
-        case _ => Nil
-      })
-    )
+      , "-target", "1.6"
+      ) ++ (javacOptions in doc).value
+    ) ++ (sys.env.get("JDK16_HOME") map { jdk16Home =>
+      javacOptions in doc ++= Seq(
+        "-bootclasspath"
+      , Seq("rt", "jsse")
+          map(jdk16Home + "/jre/lib/" + _ + ".jar")
+          mkString(java.io.File.pathSeparator)
+      )
+    })
 
   def checkByteCode(jar: File): File = {
     val zipis = new java.util.zip.ZipInputStream(new java.io.FileInputStream(jar))
@@ -151,4 +147,95 @@ object NGSBuild extends Build with Default with Dependencies {
   )
 
   lazy val root = (project in file(".")) settings ((defaultSettings ++ rootSettings): _*)
+}
+
+object Revenj {
+
+  private val scalaclienttest = "scalaclienttest"
+  private val packageName = "com.dslplatform.test"
+
+  private var revenjProcess: Option[Process] = None
+
+  private val credentials = System.getProperty("user.home") + "/.config/dsl-platform/test.credentials"
+
+  private val testLib: Def.Initialize[File] = Def.setting {
+    baseDirectory.value / "test-lib" / "java-client.jar"
+  }
+
+  private val revenjExe: Def.Initialize[File] = Def.setting {
+    baseDirectory.value / "revenj" / "Revenj.Http.exe"
+  }
+
+  private val testDll: Def.Initialize[File] = Def.setting {
+    baseDirectory.value / "revenj" / "test.dll"
+  }
+
+  val testLibTask: Def.Initialize[Task[File]] = Def.taskDyn {
+    makeScalaClientTestJar.value
+    Def.task { testLib.value }
+  }
+
+  private def makeRevenj = Def.task {
+    val base = baseDirectory.value
+    val basePath = base.getAbsolutePath
+    if (!testDll.value.exists()) {
+      com.dslplatform.compiler.client.Main.main(Array(
+        s"-revenj=${basePath}/revenj/test.dll",
+        s"-dependency:revenj=${basePath}/revenj",
+        s"-namespace=$packageName",
+        s"-db=localhost:5432/$scalaclienttest?user=$scalaclienttest&password=$scalaclienttest",
+        s"-dsl=${basePath}/src/test/resources/dsl",
+        "-download",
+        "-no-colors",
+        "-apply",
+        "-log",
+        s"-properties=$credentials"))
+      IO.copyFile(
+        base / "test-lib" / "Revenj.Http.exe.config",
+        base / "revenj" / "Revenj.Http.exe.config"
+      )
+    }
+  }
+
+  private def makeJavaClientTestJarCall(f: File) =
+    com.dslplatform.compiler.client.Main.main(Array(
+      s"-java_client=${f.getAbsolutePath}",
+      s"-namespace=$packageName",
+      "-no-colors",
+      "-dsl=http/src/test/resources/dsl",
+      "-download",
+      "-active-record",
+      "-log",
+      s"-properties=$credentials"))
+
+  private def makeScalaClientTestJar = Def.task {
+    val testLibFile: File = testLib.value
+    if (!testLibFile.getParentFile.exists()) testLibFile.getParentFile.mkdir()
+    if (!testLibFile.exists()) makeJavaClientTestJarCall(testLibFile)
+  }
+
+  private def startRevenj = Def.task {
+    scala.util.Try {
+      if (sys.props("os.name").toLowerCase(java.util.Locale.ENGLISH).contains("windows")) {
+        Seq(revenjExe.value.getPath).run
+      }
+      else {
+        Seq("mono", revenjExe.value.getPath).run
+      }
+    }
+  }
+
+  def setup: Def.Initialize[Task[() => Unit]] = Def.taskDyn {
+    makeScalaClientTestJar.value
+    makeRevenj.value
+    Def.taskDyn {
+      revenjProcess = startRevenj.value.toOption
+      Def.task { () => () }
+    }
+  }
+
+  def shutdown: Def.Initialize[Task[() => Unit]] = Def.task {
+    () =>
+      revenjProcess.map(_.destroy).getOrElse()
+  }
 }

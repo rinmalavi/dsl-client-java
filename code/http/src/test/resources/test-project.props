@@ -1,0 +1,4 @@
+username=testUser@dsl-platform.com
+project-id=test-password
+api-url=http://localhost:8999/
+package-name=com.dslplatform.test
